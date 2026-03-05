@@ -15,6 +15,7 @@ const Dashboard = () => {
     activeSession, 
     timeIn, 
     timeOut,
+    timeLogs,
     getTotalHours,
     getProgressPercentage,
     getTodayHours,
@@ -166,6 +167,7 @@ const Dashboard = () => {
     setShowDeleteConfirm(false);
   };
 
+  // Recalculate stats whenever timeLogs change
   const totalHours = getTotalHours(currentIntern.id);
   const progressPercentage = getProgressPercentage(currentIntern.id);
   const todayHours = getTodayHours(currentIntern.id);
@@ -173,6 +175,20 @@ const Dashboard = () => {
   const allLogs = getInternLogs(currentIntern.id).reverse();
   const recentLogs = showAllActivity ? allLogs : allLogs.slice(0, 5);
   const earnedBadges = getEarnedBadges(currentIntern.id);
+
+  // Check for new badges when timeLogs change
+  useEffect(() => {
+    if (currentIntern && timeLogs) {
+      const earned = getEarnedBadges(currentIntern.id);
+      const previousEarnedCount = currentIntern.earnedBadges?.length || 0;
+      if (earned.length > previousEarnedCount) {
+        const newOnes = earned.filter(b => !currentIntern.earnedBadges?.includes(b.id));
+        if (newOnes.length > 0) {
+          setNewBadges(newOnes);
+        }
+      }
+    }
+  }, [timeLogs, currentIntern, getEarnedBadges]);
 
   const sections = [
     { id: 'overview', label: 'Overview', icon: '📊' },
