@@ -1,4 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { db } from '../firebase/config';
+import { 
+  doc, 
+  setDoc, 
+  getDoc, 
+  collection, 
+  query, 
+  where, 
+  getDocs,
+  deleteDoc,
+  updateDoc,
+  onSnapshot
+} from 'firebase/firestore';
 
 const OJTContext = createContext();
 
@@ -75,155 +88,139 @@ export const BADGES = [
 ];
 
 export const OJTProvider = ({ children }) => {
-  const [interns, setInterns] = useState(() => {
-    const saved = localStorage.getItem('ojt_interns');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [interns, setInterns] = useState([]);
+  const [currentIntern, setCurrentIntern] = useState(null);
+  const [timeLogs, setTimeLogs] = useState([]);
+  const [activeSession, setActiveSession] = useState(null);
+  const [journalEntries, setJournalEntries] = useState([]);
+  const [moodLogs, setMoodLogs] = useState([]);
+  const [skillsData, setSkillsData] = useState({});
+  const [customSkills, setCustomSkills] = useState({});
+  const [signatures, setSignatures] = useState({});
+  const [excludedDates, setExcludedDates] = useState({});
+  const [customBackgrounds, setCustomBackgrounds] = useState({});
+  const [profilePictures, setProfilePictures] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  const [currentIntern, setCurrentIntern] = useState(() => {
-    const saved = localStorage.getItem('ojt_current_intern');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  const [timeLogs, setTimeLogs] = useState(() => {
-    const saved = localStorage.getItem('ojt_time_logs');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [activeSession, setActiveSession] = useState(() => {
-    const saved = localStorage.getItem('ojt_active_session');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  const [journalEntries, setJournalEntries] = useState(() => {
-    const saved = localStorage.getItem('ojt_journal_entries');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [moodLogs, setMoodLogs] = useState(() => {
-    const saved = localStorage.getItem('ojt_mood_logs');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [skillsData, setSkillsData] = useState(() => {
-    const saved = localStorage.getItem('ojt_skills_data');
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  const [customSkills, setCustomSkills] = useState(() => {
-    const saved = localStorage.getItem('ojt_custom_skills');
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  const [signatures, setSignatures] = useState(() => {
-    const saved = localStorage.getItem('ojt_signatures');
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  const [excludedDates, setExcludedDates] = useState(() => {
-    const saved = localStorage.getItem('ojt_excluded_dates');
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  const [customBackgrounds, setCustomBackgrounds] = useState(() => {
-    const saved = localStorage.getItem('ojt_custom_backgrounds');
-    return saved ? JSON.parse(saved) : {};
-  });
-
+  // Load data from Firestore when currentIntern changes
   useEffect(() => {
-    localStorage.setItem('ojt_interns', JSON.stringify(interns));
-  }, [interns]);
+    if (!currentIntern) {
+      setLoading(false);
+      return;
+    }
 
-  useEffect(() => {
-    localStorage.setItem('ojt_current_intern', JSON.stringify(currentIntern));
+    const loadUserData = async () => {
+      try {
+        // Load time logs
+        const logsQuery = query(collection(db, 'timeLogs'), where('internId', '==', currentIntern.id));
+        const logsSnapshot = await getDocs(logsQuery);
+        const logs = logsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setTimeLogs(logs);
+
+        // Load journal entries
+        const journalsQuery = query(collection(db, 'journalEntries'), where('internId', '==', currentIntern.id));
+        const journalsSnapshot = await getDocs(journalsQuery);
+        const journals = journalsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setJournalEntries(journals);
+
+        // Load mood logs
+        const moodsQuery = query(collection(db, 'moodLogs'), where('internId', '==', currentIntern.id));
+        const moodsSnapshot = await getDocs(moodsQuery);
+        const moods = moodsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setMoodLogs(moods);
+
+        // Load user settings
+        const settingsDoc = await getDoc(doc(db, 'userSettings', currentIntern.id));
+        if (settingsDoc.exists()) {
+          const settings = settingsDoc.data();
+          setSkillsData(settings.skillsData || {});
+          setCustomSkills(settings.customSkills || {});
+          setExcludedDates(settings.excludedDates || {});
+          setCustomBackgrounds(settings.customBackgrounds || {});
+          setProfilePictures(settings.profilePictures || {});
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        setLoading(false);
+      }
+    };
+
+    loadUserData();
   }, [currentIntern]);
-
-  useEffect(() => {
-    localStorage.setItem('ojt_time_logs', JSON.stringify(timeLogs));
-  }, [timeLogs]);
-
-  useEffect(() => {
-    localStorage.setItem('ojt_active_session', JSON.stringify(activeSession));
-  }, [activeSession]);
-
-  useEffect(() => {
-    localStorage.setItem('ojt_journal_entries', JSON.stringify(journalEntries));
-  }, [journalEntries]);
-
-  useEffect(() => {
-    localStorage.setItem('ojt_mood_logs', JSON.stringify(moodLogs));
-  }, [moodLogs]);
-
-  useEffect(() => {
-    localStorage.setItem('ojt_skills_data', JSON.stringify(skillsData));
-  }, [skillsData]);
-
-  useEffect(() => {
-    localStorage.setItem('ojt_custom_skills', JSON.stringify(customSkills));
-  }, [customSkills]);
-
-  useEffect(() => {
-    localStorage.setItem('ojt_signatures', JSON.stringify(signatures));
-  }, [signatures]);
-
-  useEffect(() => {
-    localStorage.setItem('ojt_excluded_dates', JSON.stringify(excludedDates));
-  }, [excludedDates]);
-
-  useEffect(() => {
-    localStorage.setItem('ojt_custom_backgrounds', JSON.stringify(customBackgrounds));
-  }, [customBackgrounds]);
 
   // Custom background functions
   const getCustomBackground = (internId) => {
     return customBackgrounds[internId] || null;
   };
 
-  const setCustomBackground = (imageData) => {
+  const setCustomBackground = async (imageData) => {
     if (!currentIntern) return;
-    setCustomBackgrounds(prev => ({
-      ...prev,
-      [currentIntern.id]: imageData
-    }));
+    const newBackgrounds = { ...customBackgrounds, [currentIntern.id]: imageData };
+    setCustomBackgrounds(newBackgrounds);
+    
+    try {
+      await setDoc(doc(db, 'userSettings', currentIntern.id), {
+        customBackgrounds: newBackgrounds
+      }, { merge: true });
+    } catch (error) {
+      console.error('Error saving custom background:', error);
+    }
   };
 
-  const removeCustomBackground = () => {
+  const removeCustomBackground = async () => {
     if (!currentIntern) return;
     const newBackgrounds = { ...customBackgrounds };
     delete newBackgrounds[currentIntern.id];
     setCustomBackgrounds(newBackgrounds);
+    
+    try {
+      await setDoc(doc(db, 'userSettings', currentIntern.id), {
+        customBackgrounds: newBackgrounds
+      }, { merge: true });
+    } catch (error) {
+      console.error('Error removing custom background:', error);
+    }
   };
 
   // Profile Picture Functions
-  const [profilePictures, setProfilePictures] = useState(() => {
-    const saved = localStorage.getItem('ojt_profile_pictures');
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  useEffect(() => {
-    localStorage.setItem('ojt_profile_pictures', JSON.stringify(profilePictures));
-  }, [profilePictures]);
-
   const getProfilePicture = (internId) => {
     return profilePictures[internId] || null;
   };
 
-  const setProfilePicture = (imageData) => {
+  const setProfilePictureData = async (imageData) => {
     if (!currentIntern) return;
-    setProfilePictures(prev => ({
-      ...prev,
-      [currentIntern.id]: imageData
-    }));
+    const newPictures = { ...profilePictures, [currentIntern.id]: imageData };
+    setProfilePictures(newPictures);
+    
+    // Save to Firestore
+    try {
+      await setDoc(doc(db, 'userSettings', currentIntern.id), {
+        profilePictures: newPictures
+      }, { merge: true });
+    } catch (error) {
+      console.error('Error saving profile picture:', error);
+    }
   };
 
-  const removeProfilePicture = () => {
+  const removeProfilePictureData = async () => {
     if (!currentIntern) return;
     const newPictures = { ...profilePictures };
     delete newPictures[currentIntern.id];
     setProfilePictures(newPictures);
+    
+    // Save to Firestore
+    try {
+      await setDoc(doc(db, 'userSettings', currentIntern.id), {
+        profilePictures: newPictures
+      }, { merge: true });
+    } catch (error) {
+      console.error('Error removing profile picture:', error);
+    }
   };
 
-  const addIntern = (name, username, password, establishment = '', program = '', targetHours = 500, startDate = null, studentId = '') => {
+  const addIntern = async (name, username, password, establishment = '', program = '', targetHours = 500, startDate = null, studentId = '') => {
     const newIntern = {
       id: Date.now().toString(),
       name,
@@ -238,36 +235,69 @@ export const OJTProvider = ({ children }) => {
       earnedBadges: [],
       profilePicture: null,
     };
-    setInterns([...interns, newIntern]);
-    // Initialize skills data for new intern
-    setSkillsData(prev => ({
-      ...prev,
-      [newIntern.id]: SKILL_CATEGORIES.reduce((acc, skill) => ({ ...acc, [skill]: 0 }), {})
-    }));
-    // Initialize custom skills for new intern (empty by default)
-    setCustomSkills(prev => ({
-      ...prev,
-      [newIntern.id]: []
-    }));
-    // Initialize excluded dates for new intern
-    setExcludedDates(prev => ({
-      ...prev,
-      [newIntern.id]: []
-    }));
-    return newIntern;
+    
+    // Save to Firestore
+    try {
+      await setDoc(doc(db, 'interns', newIntern.id), newIntern);
+      
+      // Initialize user settings
+      await setDoc(doc(db, 'userSettings', newIntern.id), {
+        skillsData: SKILL_CATEGORIES.reduce((acc, skill) => ({ ...acc, [skill]: 0 }), {}),
+        customSkills: [],
+        excludedDates: [],
+        customBackgrounds: {},
+        profilePictures: {}
+      });
+      
+      setInterns([...interns, newIntern]);
+      return newIntern;
+    } catch (error) {
+      console.error('Error adding intern:', error);
+      return null;
+    }
   };
 
-  const loginIntern = (usernameOrStudentId, password) => {
-    // Check if login is by username or studentId
-    const intern = interns.find(i => 
-      (i.username === usernameOrStudentId || i.studentId === usernameOrStudentId) && 
-      i.password === password
-    );
-    if (intern) {
-      setCurrentIntern(intern);
-      return { success: true, intern };
+  const loginIntern = async (usernameOrStudentId, password) => {
+    try {
+      // Query Firestore for intern with matching username/studentId and password
+      const internsQuery = query(
+        collection(db, 'interns'),
+        where('username', '==', usernameOrStudentId)
+      );
+      const internsSnapshot = await getDocs(internsQuery);
+      
+      let intern = null;
+      internsSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.password === password) {
+          intern = { id: doc.id, ...data };
+        }
+      });
+      
+      // If not found by username, try studentId
+      if (!intern && usernameOrStudentId) {
+        const studentIdQuery = query(
+          collection(db, 'interns'),
+          where('studentId', '==', usernameOrStudentId)
+        );
+        const studentIdSnapshot = await getDocs(studentIdQuery);
+        studentIdSnapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.password === password) {
+            intern = { id: doc.id, ...data };
+          }
+        });
+      }
+      
+      if (intern) {
+        setCurrentIntern(intern);
+        return { success: true, intern };
+      }
+      return { success: false, error: 'Invalid username/student ID or password' };
+    } catch (error) {
+      console.error('Error logging in:', error);
+      return { success: false, error: 'Login failed. Please try again.' };
     }
-    return { success: false, error: 'Invalid username/student ID or password' };
   };
 
   const logoutIntern = () => {
@@ -275,7 +305,7 @@ export const OJTProvider = ({ children }) => {
     setActiveSession(null);
   };
 
-  const timeIn = () => {
+  const timeIn = async () => {
     if (!currentIntern) return false;
     
     const session = {
@@ -285,12 +315,21 @@ export const OJTProvider = ({ children }) => {
       timeOut: null,
       autoTimeoutScheduled: false,
     };
-    setActiveSession(session);
     
-    // Schedule automatic timeout 5 minutes after 5:00 PM (5:05 PM)
-    scheduleAutoTimeout(session);
-    
-    return true;
+    try {
+      // Save active session to Firestore (temporary, will be updated on timeout)
+      await setDoc(doc(db, 'activeSessions', currentIntern.id), session);
+      
+      setActiveSession(session);
+      
+      // Schedule automatic timeout 5 minutes after 5:00 PM (5:05 PM)
+      scheduleAutoTimeout(session);
+      
+      return true;
+    } catch (error) {
+      console.error('Error starting time in:', error);
+      return false;
+    }
   };
 
   // Schedule automatic timeout at 5:05 PM
@@ -318,7 +357,7 @@ export const OJTProvider = ({ children }) => {
   };
 
   // Perform automatic timeout at exactly 5:05 PM
-  const performAutoTimeout = () => {
+  const performAutoTimeout = async () => {
     if (!activeSession || !currentIntern) return;
     
     const now = new Date();
@@ -360,16 +399,27 @@ export const OJTProvider = ({ children }) => {
       isAutoTimeout: true,
     };
 
-    setTimeLogs(prev => [...prev, completedSession]);
-    setActiveSession(null);
-    
-    // Check and award badges
-    checkAndAwardBadges(currentIntern.id, [...timeLogs, completedSession]);
-    
-    return completedSession;
+    try {
+      // Save to Firestore
+      await setDoc(doc(db, 'timeLogs', completedSession.id), completedSession);
+      
+      // Delete active session from Firestore
+      await deleteDoc(doc(db, 'activeSessions', currentIntern.id));
+      
+      setTimeLogs(prev => [...prev, completedSession]);
+      setActiveSession(null);
+      
+      // Check and award badges
+      checkAndAwardBadges(currentIntern.id, [...timeLogs, completedSession]);
+      
+      return completedSession;
+    } catch (error) {
+      console.error('Error in auto timeout:', error);
+      return null;
+    }
   };
 
-  const timeOut = (skills = []) => {
+  const timeOut = async (skills = []) => {
     if (!activeSession) return false;
 
     const now = new Date();
@@ -398,25 +448,41 @@ export const OJTProvider = ({ children }) => {
       skills: skills || [],
     };
 
-    setTimeLogs([...timeLogs, completedSession]);
-    
-    // Update skills data
-    if (skills && skills.length > 0) {
-      setSkillsData(prev => {
-        const internSkills = prev[currentIntern.id] || {};
+    // Save to Firestore
+    try {
+      await setDoc(doc(db, 'timeLogs', completedSession.id), completedSession);
+      
+      setTimeLogs([...timeLogs, completedSession]);
+      
+      // Update skills data
+      if (skills && skills.length > 0) {
+        const newSkillsData = { ...skillsData };
+        const internSkills = newSkillsData[currentIntern.id] || {};
         const updatedSkills = { ...internSkills };
         skills.forEach(skill => {
           updatedSkills[skill] = (updatedSkills[skill] || 0) + durationHours;
         });
-        return { ...prev, [currentIntern.id]: updatedSkills };
-      });
+        newSkillsData[currentIntern.id] = updatedSkills;
+        setSkillsData(newSkillsData);
+        
+        // Save to Firestore
+        await setDoc(doc(db, 'userSettings', currentIntern.id), {
+          skillsData: newSkillsData
+        }, { merge: true });
+      }
+
+      // Check and award badges
+      checkAndAwardBadges(currentIntern.id, [...timeLogs, completedSession]);
+
+      // Delete active session from Firestore
+      await deleteDoc(doc(db, 'activeSessions', currentIntern.id));
+      
+      setActiveSession(null);
+      return completedSession;
+    } catch (error) {
+      console.error('Error saving time out:', error);
+      return false;
     }
-
-    // Check and award badges
-    checkAndAwardBadges(currentIntern.id, [...timeLogs, completedSession]);
-
-    setActiveSession(null);
-    return completedSession;
   };
 
   const getInternLogs = (internId) => {
@@ -448,35 +514,72 @@ export const OJTProvider = ({ children }) => {
     return todayLogs.reduce((total, log) => total + (log.durationHours || 0), 0);
   };
 
-  const updateIntern = (internId, updates) => {
-    setInterns(interns.map(i => i.id === internId ? { ...i, ...updates } : i));
-    if (currentIntern && currentIntern.id === internId) {
-      setCurrentIntern({ ...currentIntern, ...updates });
+  const updateIntern = async (internId, updates) => {
+    try {
+      const internRef = doc(db, 'interns', internId);
+      await updateDoc(internRef, updates);
+      
+      setInterns(interns.map(i => i.id === internId ? { ...i, ...updates } : i));
+      if (currentIntern && currentIntern.id === internId) {
+        setCurrentIntern({ ...currentIntern, ...updates });
+      }
+    } catch (error) {
+      console.error('Error updating intern:', error);
     }
   };
 
-  const deleteIntern = (internId) => {
-    setInterns(interns.filter(i => i.id !== internId));
-    setTimeLogs(timeLogs.filter(log => log.internId !== internId));
-    setJournalEntries(journalEntries.filter(entry => entry.internId !== internId));
-    setMoodLogs(moodLogs.filter(log => log.internId !== internId));
-    const newSkillsData = { ...skillsData };
-    delete newSkillsData[internId];
-    setSkillsData(newSkillsData);
-    const newCustomSkills = { ...customSkills };
-    delete newCustomSkills[internId];
-    setCustomSkills(newCustomSkills);
-    const newExcludedDates = { ...excludedDates };
-    delete newExcludedDates[internId];
-    setExcludedDates(newExcludedDates);
-    if (currentIntern?.id === internId) {
-      setCurrentIntern(null);
-      setActiveSession(null);
+  const deleteIntern = async (internId) => {
+    try {
+      // Delete from Firestore
+      await deleteDoc(doc(db, 'interns', internId));
+      await deleteDoc(doc(db, 'userSettings', internId));
+      
+      // Delete all time logs
+      const logsQuery = query(collection(db, 'timeLogs'), where('internId', '==', internId));
+      const logsSnapshot = await getDocs(logsQuery);
+      logsSnapshot.forEach(async (logDoc) => {
+        await deleteDoc(doc(db, 'timeLogs', logDoc.id));
+      });
+      
+      // Delete all journal entries
+      const journalsQuery = query(collection(db, 'journalEntries'), where('internId', '==', internId));
+      const journalsSnapshot = await getDocs(journalsQuery);
+      journalsSnapshot.forEach(async (journalDoc) => {
+        await deleteDoc(doc(db, 'journalEntries', journalDoc.id));
+      });
+      
+      // Delete all mood logs
+      const moodsQuery = query(collection(db, 'moodLogs'), where('internId', '==', internId));
+      const moodsSnapshot = await getDocs(moodsQuery);
+      moodsSnapshot.forEach(async (moodDoc) => {
+        await deleteDoc(doc(db, 'moodLogs', moodDoc.id));
+      });
+      
+      // Update local state
+      setInterns(interns.filter(i => i.id !== internId));
+      setTimeLogs(timeLogs.filter(log => log.internId !== internId));
+      setJournalEntries(journalEntries.filter(entry => entry.internId !== internId));
+      setMoodLogs(moodLogs.filter(log => log.internId !== internId));
+      const newSkillsData = { ...skillsData };
+      delete newSkillsData[internId];
+      setSkillsData(newSkillsData);
+      const newCustomSkills = { ...customSkills };
+      delete newCustomSkills[internId];
+      setCustomSkills(newCustomSkills);
+      const newExcludedDates = { ...excludedDates };
+      delete newExcludedDates[internId];
+      setExcludedDates(newExcludedDates);
+      if (currentIntern?.id === internId) {
+        setCurrentIntern(null);
+        setActiveSession(null);
+      }
+    } catch (error) {
+      console.error('Error deleting intern:', error);
     }
   };
 
   // Excluded dates functions
-  const addExcludedDate = (date, reason, type = 'absence') => {
+  const addExcludedDate = async (date, reason, type = 'absence') => {
     const newExcluded = {
       id: Date.now().toString(),
       date,
@@ -484,66 +587,93 @@ export const OJTProvider = ({ children }) => {
       type, // 'weekend', 'holiday', 'absence'
     };
     
-    // Add the excluded date
-    setExcludedDates(prev => ({
-      ...prev,
-      [currentIntern.id]: [...(prev[currentIntern.id] || []), newExcluded]
-    }));
-    
-    // Remove any time logs on the excluded date for the current intern
-    const excludedDateStr = new Date(date).toDateString();
-    const logsBefore = timeLogs.filter(log => log.internId === currentIntern?.id);
-    const logsToRemove = logsBefore.filter(log => {
-      const logDateStr = new Date(log.timeIn).toDateString();
-      return logDateStr === excludedDateStr;
-    });
-    
-    if (logsToRemove.length > 0) {
-      // Remove logs from the excluded date
-      setTimeLogs(prev => prev.filter(log => {
-        if (log.internId !== currentIntern?.id) return true;
-        const logDateStr = new Date(log.timeIn).toDateString();
-        return logDateStr !== excludedDateStr;
-      }));
+    try {
+      // Add the excluded date
+      const newExcludedDates = { ...excludedDates };
+      newExcludedDates[currentIntern.id] = [...(newExcludedDates[currentIntern.id] || []), newExcluded];
+      setExcludedDates(newExcludedDates);
       
-      // Recalculate skills data after removing logs
-      const remainingLogs = logsBefore.filter(log => {
+      // Remove any time logs on the excluded date for the current intern
+      const excludedDateStr = new Date(date).toDateString();
+      const logsBefore = timeLogs.filter(log => log.internId === currentIntern?.id);
+      const logsToRemove = logsBefore.filter(log => {
         const logDateStr = new Date(log.timeIn).toDateString();
-        return logDateStr !== excludedDateStr;
+        return logDateStr === excludedDateStr;
       });
       
-      // Recalculate skills from remaining logs
-      const newSkillsData = { ...skillsData[currentIntern?.id] };
-      Object.keys(newSkillsData).forEach(skill => {
-        newSkillsData[skill] = 0;
-      });
-      
-      remainingLogs.forEach(log => {
-        (log.skills || []).forEach(skill => {
-          if (newSkillsData[skill] !== undefined) {
-            newSkillsData[skill] += log.durationHours || 0;
-          }
+      if (logsToRemove.length > 0) {
+        // Remove logs from Firestore
+        for (const log of logsToRemove) {
+          await deleteDoc(doc(db, 'timeLogs', log.id));
+        }
+        
+        // Remove logs from local state
+        setTimeLogs(prev => prev.filter(log => {
+          if (log.internId !== currentIntern?.id) return true;
+          const logDateStr = new Date(log.timeIn).toDateString();
+          return logDateStr !== excludedDateStr;
+        }));
+        
+        // Recalculate skills data after removing logs
+        const remainingLogs = logsBefore.filter(log => {
+          const logDateStr = new Date(log.timeIn).toDateString();
+          return logDateStr !== excludedDateStr;
         });
-      });
+        
+        // Recalculate skills from remaining logs
+        const newSkillsData = { ...skillsData };
+        const internSkills = { ...newSkillsData[currentIntern?.id] };
+        Object.keys(internSkills).forEach(skill => {
+          internSkills[skill] = 0;
+        });
+        
+        remainingLogs.forEach(log => {
+          (log.skills || []).forEach(skill => {
+            if (internSkills[skill] !== undefined) {
+              internSkills[skill] += log.durationHours || 0;
+            }
+          });
+        });
+        
+        newSkillsData[currentIntern?.id] = internSkills;
+        setSkillsData(newSkillsData);
+        
+        // Save to Firestore
+        await setDoc(doc(db, 'userSettings', currentIntern.id), {
+          excludedDates: newExcludedDates,
+          skillsData: newSkillsData
+        }, { merge: true });
+      } else {
+        // Just save excluded dates
+        await setDoc(doc(db, 'userSettings', currentIntern.id), {
+          excludedDates: newExcludedDates
+        }, { merge: true });
+      }
       
-      setSkillsData(prev => ({
-        ...prev,
-        [currentIntern?.id]: newSkillsData
-      }));
+      return { ...newExcluded, logsRemoved: logsToRemove.length };
+    } catch (error) {
+      console.error('Error adding excluded date:', error);
+      return null;
     }
-    
-    return { ...newExcluded, logsRemoved: logsToRemove.length };
   };
 
   const getExcludedDates = (internId) => {
     return excludedDates[internId] || [];
   };
 
-  const removeExcludedDate = (dateId) => {
-    setExcludedDates(prev => ({
-      ...prev,
-      [currentIntern.id]: (prev[currentIntern.id] || []).filter(d => d.id !== dateId)
-    }));
+  const removeExcludedDate = async (dateId) => {
+    try {
+      const newExcludedDates = { ...excludedDates };
+      newExcludedDates[currentIntern.id] = (newExcludedDates[currentIntern.id] || []).filter(d => d.id !== dateId);
+      setExcludedDates(newExcludedDates);
+      
+      // Save to Firestore
+      await setDoc(doc(db, 'userSettings', currentIntern.id), {
+        excludedDates: newExcludedDates
+      }, { merge: true });
+    } catch (error) {
+      console.error('Error removing excluded date:', error);
+    }
   };
 
   // Calculate working days between start date and now, excluding weekends, holidays, and absences
@@ -592,15 +722,22 @@ export const OJTProvider = ({ children }) => {
   };
 
   // Journal functions
-  const addJournalEntry = (entry) => {
+  const addJournalEntry = async (entry) => {
     const newEntry = {
       id: Date.now().toString(),
       internId: currentIntern.id,
       date: new Date().toISOString(),
       ...entry,
     };
-    setJournalEntries([...journalEntries, newEntry]);
-    return newEntry;
+    
+    try {
+      await setDoc(doc(db, 'journalEntries', newEntry.id), newEntry);
+      setJournalEntries([...journalEntries, newEntry]);
+      return newEntry;
+    } catch (error) {
+      console.error('Error adding journal entry:', error);
+      return null;
+    }
   };
 
   const getInternJournals = (internId) => {
@@ -608,7 +745,7 @@ export const OJTProvider = ({ children }) => {
   };
 
   // Mood tracking
-  const addMoodLog = (mood, note = '') => {
+  const addMoodLog = async (mood, note = '') => {
     const newLog = {
       id: Date.now().toString(),
       internId: currentIntern.id,
@@ -616,8 +753,15 @@ export const OJTProvider = ({ children }) => {
       mood,
       note,
     };
-    setMoodLogs([...moodLogs, newLog]);
-    return newLog;
+    
+    try {
+      await setDoc(doc(db, 'moodLogs', newLog.id), newLog);
+      setMoodLogs([...moodLogs, newLog]);
+      return newLog;
+    } catch (error) {
+      console.error('Error adding mood log:', error);
+      return null;
+    }
   };
 
   const getInternMoodLogs = (internId) => {
@@ -634,7 +778,7 @@ export const OJTProvider = ({ children }) => {
     return customSkills[internId] || [];
   };
 
-  const addCustomSkill = (skillName) => {
+  const addCustomSkill = async (skillName) => {
     if (!currentIntern || !skillName.trim()) return null;
     
     const newSkill = {
@@ -642,47 +786,57 @@ export const OJTProvider = ({ children }) => {
       name: skillName.trim(),
     };
     
-    setCustomSkills(prev => ({
-      ...prev,
-      [currentIntern.id]: [...(prev[currentIntern.id] || []), newSkill]
-    }));
-    
-    // Initialize skill data for this custom skill
-    setSkillsData(prev => {
-      const internSkills = prev[currentIntern.id] || {};
-      return {
-        ...prev,
-        [currentIntern.id]: {
-          ...internSkills,
-          [newSkill.name]: 0
-        }
-      };
-    });
-    
-    return newSkill;
+    try {
+      const newCustomSkills = { ...customSkills };
+      newCustomSkills[currentIntern.id] = [...(newCustomSkills[currentIntern.id] || []), newSkill];
+      setCustomSkills(newCustomSkills);
+      
+      // Initialize skill data for this custom skill
+      const newSkillsData = { ...skillsData };
+      const internSkills = newSkillsData[currentIntern.id] || {};
+      newSkillsData[currentIntern.id] = { ...internSkills, [newSkill.name]: 0 };
+      setSkillsData(newSkillsData);
+      
+      // Save to Firestore
+      await setDoc(doc(db, 'userSettings', currentIntern.id), {
+        customSkills: newCustomSkills,
+        skillsData: newSkillsData
+      }, { merge: true });
+      
+      return newSkill;
+    } catch (error) {
+      console.error('Error adding custom skill:', error);
+      return null;
+    }
   };
 
-  const removeCustomSkill = (skillId) => {
+  const removeCustomSkill = async (skillId) => {
     if (!currentIntern) return;
     
-    const internCustomSkills = customSkills[currentIntern.id] || [];
-    const skillToRemove = internCustomSkills.find(s => s.id === skillId);
-    
-    if (skillToRemove) {
-      setCustomSkills(prev => ({
-        ...prev,
-        [currentIntern.id]: prev[currentIntern.id].filter(s => s.id !== skillId)
-      }));
+    try {
+      const internCustomSkills = customSkills[currentIntern.id] || [];
+      const skillToRemove = internCustomSkills.find(s => s.id === skillId);
       
-      // Remove from skills data as well
-      setSkillsData(prev => {
-        const internSkills = { ...prev[currentIntern.id] };
+      if (skillToRemove) {
+        const newCustomSkills = { ...customSkills };
+        newCustomSkills[currentIntern.id] = newCustomSkills[currentIntern.id].filter(s => s.id !== skillId);
+        setCustomSkills(newCustomSkills);
+        
+        // Remove from skills data as well
+        const newSkillsData = { ...skillsData };
+        const internSkills = { ...newSkillsData[currentIntern.id] };
         delete internSkills[skillToRemove.name];
-        return {
-          ...prev,
-          [currentIntern.id]: internSkills
-        };
-      });
+        newSkillsData[currentIntern.id] = internSkills;
+        setSkillsData(newSkillsData);
+        
+        // Save to Firestore
+        await setDoc(doc(db, 'userSettings', currentIntern.id), {
+          customSkills: newCustomSkills,
+          skillsData: newSkillsData
+        }, { merge: true });
+      }
+    } catch (error) {
+      console.error('Error removing custom skill:', error);
     }
   };
 
@@ -693,7 +847,7 @@ export const OJTProvider = ({ children }) => {
   };
 
   // Badge functions
-  const checkAndAwardBadges = (internId, logs) => {
+  const checkAndAwardBadges = async (internId, logs) => {
     const intern = interns.find(i => i.id === internId);
     if (!intern) return;
 
@@ -722,9 +876,16 @@ export const OJTProvider = ({ children }) => {
     }
 
     if (newBadges.length > 0) {
-      setInterns(interns.map(i => i.id === internId ? { ...i, earnedBadges } : i));
-      if (currentIntern?.id === internId) {
-        setCurrentIntern({ ...currentIntern, earnedBadges });
+      try {
+        // Update in Firestore
+        await updateDoc(doc(db, 'interns', internId), { earnedBadges });
+        
+        setInterns(interns.map(i => i.id === internId ? { ...i, earnedBadges } : i));
+        if (currentIntern?.id === internId) {
+          setCurrentIntern({ ...currentIntern, earnedBadges });
+        }
+      } catch (error) {
+        console.error('Error updating badges:', error);
       }
     }
 
@@ -866,7 +1027,7 @@ export const OJTProvider = ({ children }) => {
   };
 
   // Manual time log entry for past hours
-  const addManualTimeLog = (date, timeIn, timeOut, skills = [], notes = '') => {
+  const addManualTimeLog = async (date, timeIn, timeOut, skills = [], notes = '') => {
     const durationHours = calculateGovernmentHours(timeIn, timeOut);
 
     if (durationHours <= 0) return { success: false, error: 'Invalid time range' };
@@ -885,26 +1046,39 @@ export const OJTProvider = ({ children }) => {
       isManualEntry: true,
     };
 
-    setTimeLogs([...timeLogs, log]);
-    
-    // Update skills
-    if (skills && skills.length > 0) {
-      setSkillsData(prev => {
-        const internSkills = prev[currentIntern.id] || {};
+    try {
+      // Save to Firestore
+      await setDoc(doc(db, 'timeLogs', log.id), log);
+      
+      setTimeLogs([...timeLogs, log]);
+      
+      // Update skills
+      if (skills && skills.length > 0) {
+        const newSkillsData = { ...skillsData };
+        const internSkills = newSkillsData[currentIntern.id] || {};
         const updatedSkills = { ...internSkills };
         skills.forEach(skill => {
           updatedSkills[skill] = (updatedSkills[skill] || 0) + durationHours;
         });
-        return { ...prev, [currentIntern.id]: updatedSkills };
-      });
-    }
+        newSkillsData[currentIntern.id] = updatedSkills;
+        setSkillsData(newSkillsData);
+        
+        // Save to Firestore
+        await setDoc(doc(db, 'userSettings', currentIntern.id), {
+          skillsData: newSkillsData
+        }, { merge: true });
+      }
 
-    checkAndAwardBadges(currentIntern.id, [...timeLogs, log]);
-    return { success: true, log };
+      checkAndAwardBadges(currentIntern.id, [...timeLogs, log]);
+      return { success: true, log };
+    } catch (error) {
+      console.error('Error adding manual time log:', error);
+      return { success: false, error: 'Failed to save time log' };
+    }
   };
 
   // Auto-generate past working days logs
-  const generatePastLogs = (endDate = null) => {
+  const generatePastLogs = async (endDate = null) => {
     const intern = currentIntern;
     if (!intern) return { success: false, error: 'No intern logged in' };
 
@@ -954,31 +1128,41 @@ export const OJTProvider = ({ children }) => {
       current.setDate(current.getDate() + 1);
     }
 
-    // Add all new logs to timeLogs
+    // Add all new logs to timeLogs and Firestore
     if (newLogs.length > 0) {
-      setTimeLogs(prev => [...prev, ...newLogs]);
-      
-      // Calculate total hours after adding logs
-      const hoursAfter = hoursBefore + (newLogs.length * 8);
-      
-      // Check for newly earned badges
-      const allLogs = [...existingLogs, ...newLogs];
-      const newBadges = checkAndAwardBadges(intern.id, allLogs);
-      
-      // Determine which badges were earned from this generation
-      const earnedBadgeIds = intern.earnedBadges || [];
-      const newlyEarnedBadges = newBadges.filter(badge => 
-        !earnedBadgeIds.includes(badge.id) || 
-        (hoursBefore < badge.requirement && hoursAfter >= badge.requirement)
-      );
+      try {
+        // Save all logs to Firestore
+        for (const log of newLogs) {
+          await setDoc(doc(db, 'timeLogs', log.id), log);
+        }
+        
+        setTimeLogs(prev => [...prev, ...newLogs]);
+        
+        // Calculate total hours after adding logs
+        const hoursAfter = hoursBefore + (newLogs.length * 8);
+        
+        // Check for newly earned badges
+        const allLogs = [...existingLogs, ...newLogs];
+        const newBadges = checkAndAwardBadges(intern.id, allLogs);
+        
+        // Determine which badges were earned from this generation
+        const earnedBadgeIds = intern.earnedBadges || [];
+        const newlyEarnedBadges = newBadges.filter(badge => 
+          !earnedBadgeIds.includes(badge.id) || 
+          (hoursBefore < badge.requirement && hoursAfter >= badge.requirement)
+        );
 
-      return { 
-        success: true, 
-        logsCreated,
-        hoursAdded: newLogs.length * 8,
-        totalHours: hoursAfter,
-        newBadges: newlyEarnedBadges
-      };
+        return { 
+          success: true, 
+          logsCreated,
+          hoursAdded: newLogs.length * 8,
+          totalHours: hoursAfter,
+          newBadges: newlyEarnedBadges
+        };
+      } catch (error) {
+        console.error('Error generating past logs:', error);
+        return { success: false, error: 'Failed to save logs' };
+      }
     }
 
     return { success: true, logsCreated: 0, hoursAdded: 0, totalHours: hoursBefore, newBadges: [] };
@@ -993,6 +1177,7 @@ export const OJTProvider = ({ children }) => {
     moodLogs,
     skillsData,
     signatures,
+    loading,
     addIntern,
     loginIntern,
     logoutIntern,
@@ -1030,8 +1215,8 @@ export const OJTProvider = ({ children }) => {
     setCustomBackground,
     removeCustomBackground,
     getProfilePicture,
-    setProfilePicture,
-    removeProfilePicture,
+    setProfilePicture: setProfilePictureData,
+    removeProfilePicture: removeProfilePictureData,
     SKILL_CATEGORIES,
     DEPARTMENT_CHECKLISTS,
     BADGES,
