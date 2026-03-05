@@ -2,12 +2,12 @@
   "name": "OJT Hours Tracker",
   "short_name": "OJT Tracker",
   "description": "Track your OJT hours, skills, and progress",
-  "start_url": "/",
+  "start_url": "/OJT-Tracker/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4f46e5",
   "orientation": "portrait",
-  "scope": "/",
+  "scope": "/OJT-Tracker/",
   "icons": [
     {
       "src": "/icon-72x72.png",
