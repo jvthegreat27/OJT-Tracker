@@ -28,11 +28,24 @@ jobs:
         with:
           node-version: 20
 
+      - name: Check directory structure
+        run: ls -la
+
       - name: Install dependencies
-        run: cd ojt-tracker && npm ci
+        run: |
+          if [ -d "ojt-tracker" ]; then
+            cd ojt-tracker && npm ci
+          else
+            npm ci
+          fi
 
       - name: Build
-        run: cd ojt-tracker && npm run build
+        run: |
+          if [ -d "ojt-tracker" ]; then
+            cd ojt-tracker && npm run build
+          else
+            npm run build
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -40,7 +53,9 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './ojt-tracker/dist'
+          path: |
+            ./dist
+            ./ojt-tracker/dist
 
       - name: Deploy to GitHub Pages
         id: deployment
