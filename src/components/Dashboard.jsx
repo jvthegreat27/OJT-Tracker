@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOJT } from '../context/OJTContext';
 import JournalModal from './JournalModal';
+import JournalEntriesList from './JournalEntriesList';
 import SkillsHeatmap from './SkillsHeatmap';
 import BadgesDisplay from './BadgesDisplay';
 import MonthlyReportModal from './MonthlyReportModal';
@@ -194,6 +195,7 @@ const Dashboard = () => {
     { id: 'overview', label: 'Overview', icon: '📊' },
     { id: 'skills', label: 'Skills Heatmap', icon: '🔥' },
     { id: 'badges', label: 'Achievements', icon: '🏆' },
+    { id: 'journal', label: 'Journal', icon: '📓' },
     { id: 'activity', label: 'Recent Activity', icon: '📋' },
   ];
 
@@ -549,17 +551,38 @@ const Dashboard = () => {
 
         {/* Progress Section */}
         <section id="overview" className="progress-section">
-          <div className="progress-header">
-            <h3>Progress to Goal</h3>
-            <span className="progress-text">{totalHours.toFixed(1)} / {currentIntern.targetHours} hours</span>
+          <div className="progress-card">
+            <div className="progress-header">
+              <div className="progress-title">
+                <h3>Progress to Goal</h3>
+                <span className="progress-subtitle">{completedDays} days completed</span>
+              </div>
+              <div className="progress-stats">
+                <span className="progress-hours">{totalHours.toFixed(1)}h</span>
+                <span className="progress-target">/ {currentIntern.targetHours}h</span>
+              </div>
+            </div>
+            
+            <div className="progress-bar-container">
+              <div 
+                className="progress-bar" 
+                style={{ width: `${progressPercentage}%` }}
+              >
+                <span className="progress-bar-glow"></span>
+              </div>
+            </div>
+            
+            <div className="progress-footer">
+              <div className="progress-percentage">
+                <span className="percentage-value">{progressPercentage}%</span>
+                <span className="percentage-label">Complete</span>
+              </div>
+              <div className="progress-remaining">
+                <span className="remaining-value">{(currentIntern.targetHours - totalHours).toFixed(1)}h</span>
+                <span className="remaining-label">Remaining</span>
+              </div>
+            </div>
           </div>
-          <div className="progress-bar-container">
-            <div 
-              className="progress-bar" 
-              style={{ width: `${progressPercentage}%` }}
-            ></div>
-          </div>
-          <div className="progress-percentage">{progressPercentage}% Complete</div>
         </section>
 
         {/* Skills Heatmap */}
@@ -571,6 +594,21 @@ const Dashboard = () => {
         <div id="badges">
           <BadgesDisplay />
         </div>
+
+        {/* Journal Section */}
+        <section id="journal" className="journal-section-dashboard">
+          <div className="section-header">
+            <h3>Daily Journal Entries</h3>
+            <button className="btn btn-primary" onClick={() => setShowJournal(true)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add Entry
+            </button>
+          </div>
+          <JournalEntriesList />
+        </section>
 
         {/* Recent Activity */}
         <section id="activity" className="activity-section">

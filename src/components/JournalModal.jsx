@@ -1,12 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { useOJT, DEPARTMENT_CHECKLISTS } from '../context/OJTContext';
+import { useOJT } from '../context/OJTContext';
 
 const JournalModal = ({ onClose }) => {
-  const { currentIntern, addJournalEntry, getInternJournals } = useOJT();
-  const [accomplishments, setAccomplishments] = useState('');
-  const [challenges, setChallenges] = useState('');
-  const [learnings, setLearnings] = useState('');
-  const [tomorrowGoals, setTomorrowGoals] = useState('');
+  const { currentIntern, addJournalEntry, getInternJournals, getInternCustomSkills } = useOJT();
+  const [journalEntry, setJournalEntry] = useState('');
   const [checklist, setChecklist] = useState({});
   const [mood, setMood] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -14,7 +11,11 @@ const JournalModal = ({ onClose }) => {
   const [attachments, setAttachments] = useState([]);
   const fileInputRef = useRef(null);
 
-  const departmentChecklist = DEPARTMENT_CHECKLISTS[currentIntern?.department] || DEPARTMENT_CHECKLISTS['General'];
+  // Get user's custom skills for the checklist
+  const customSkills = getInternCustomSkills(currentIntern?.id) || [];
+  const skillChecklist = customSkills.length > 0 
+    ? customSkills.map(s => s.name)
+    : ['General Duties', 'Administrative Tasks', 'Documentation', 'Communication'];
 
   const handleChecklistToggle = (item) => {
     setChecklist(prev => ({
@@ -23,7 +24,7 @@ const JournalModal = ({ onClose }) => {
     }));
   };
 
-  const handleVoiceInput = (field) => {
+  const handleVoiceInput = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       alert('Voice recognition is not supported in your browser. Please use Chrome.');
       return;
@@ -38,7 +39,7 @@ const JournalModal = ({ onClose }) => {
 
     recognition.onstart = () => {
       setIsListening(true);
-      setActiveField(field);
+      setActiveField('journal');
     };
 
     recognition.onend = () => {
@@ -48,22 +49,7 @@ const JournalModal = ({ onClose }) => {
 
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
-      switch(field) {
-        case 'accomplishments':
-          setAccomplishments(prev => prev ? prev + ' ' + transcript : transcript);
-          break;
-        case 'challenges':
-          setChallenges(prev => prev ? prev + ' ' + transcript : transcript);
-          break;
-        case 'learnings':
-          setLearnings(prev => prev ? prev + ' ' + transcript : transcript);
-          break;
-        case 'tomorrowGoals':
-          setTomorrowGoals(prev => prev ? prev + ' ' + transcript : transcript);
-          break;
-        default:
-          break;
-      }
+      setJournalEntry(prev => prev ? prev + ' ' + transcript : transcript);
     };
 
     recognition.start();
@@ -90,10 +76,7 @@ const JournalModal = ({ onClose }) => {
     e.preventDefault();
     
     const entry = {
-      accomplishments,
-      challenges,
-      learnings,
-      tomorrowGoals,
+      journalEntry,
       checklist,
       mood,
       attachments: attachments.map(att => ({
@@ -123,18 +106,18 @@ const JournalModal = ({ onClose }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="journal-form">
-          {/* Daily Checklist */}
+          {/* Skills Checklist - Synced with User's Custom Skills */}
           <div className="journal-section">
-            <h4>Daily Objectives Checklist</h4>
-            <div className="checklist-grid">
-              {departmentChecklist.map((item, index) => (
-                <label key={index} className="checklist-item">
+            <h4>Skills Practiced Today</h4>
+            <p className="section-hint">Select the skills you worked on today:</p>
+            <div className="checklist-grid skills-checklist">
+              {skillChecklist.map((item, index) => (
+                <label key={index} className="checklist-item skill-checklist-item">
                   <input
                     type="checkbox"
                     checked={checklist[item] || false}
                     onChange={() => handleChecklistToggle(item)}
                   />
-                  <span className="checkmark"></span>
                   <span className="checklist-text">{item}</span>
                 </label>
               ))}
@@ -158,17 +141,18 @@ const JournalModal = ({ onClose }) => {
             </div>
           </div>
 
-          {/* Journal Fields with Voice Input */}
+          {/* Simplified Journal Entry */}
           <div className="journal-section">
-            <h4>Journal Entry</h4>
+            <h4>Daily Reflection</h4>
+            <p className="section-hint">Share your thoughts about today's work experience:</p>
             
             <div className="journal-field">
               <div className="field-header">
-                <label>Today's Accomplishments</label>
+                <label>What did you do today? What did you learn?</label>
                 <button
                   type="button"
-                  className={`voice-btn ${isListening && activeField === 'accomplishments' ? 'listening' : ''}`}
-                  onClick={() => handleVoiceInput('accomplishments')}
+                  className={`voice-btn ${isListening && activeField === 'journal' ? 'listening' : ''}`}
+                  onClick={handleVoiceInput}
                   title="Voice to text"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
@@ -180,85 +164,10 @@ const JournalModal = ({ onClose }) => {
                 </button>
               </div>
               <textarea
-                value={accomplishments}
-                onChange={(e) => setAccomplishments(e.target.value)}
-                placeholder="What did you accomplish today?"
-                rows="3"
-              />
-            </div>
-
-            <div className="journal-field">
-              <div className="field-header">
-                <label>Challenges Faced</label>
-                <button
-                  type="button"
-                  className={`voice-btn ${isListening && activeField === 'challenges' ? 'listening' : ''}`}
-                  onClick={() => handleVoiceInput('challenges')}
-                  title="Voice to text"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                    <line x1="12" y1="19" x2="12" y2="23"/>
-                    <line x1="8" y1="23" x2="16" y2="23"/>
-                  </svg>
-                </button>
-              </div>
-              <textarea
-                value={challenges}
-                onChange={(e) => setChallenges(e.target.value)}
-                placeholder="What challenges did you encounter?"
-                rows="3"
-              />
-            </div>
-
-            <div className="journal-field">
-              <div className="field-header">
-                <label>Key Learnings</label>
-                <button
-                  type="button"
-                  className={`voice-btn ${isListening && activeField === 'learnings' ? 'listening' : ''}`}
-                  onClick={() => handleVoiceInput('learnings')}
-                  title="Voice to text"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                    <line x1="12" y1="19" x2="12" y2="23"/>
-                    <line x1="8" y1="23" x2="16" y2="23"/>
-                  </svg>
-                </button>
-              </div>
-              <textarea
-                value={learnings}
-                onChange={(e) => setLearnings(e.target.value)}
-                placeholder="What did you learn today?"
-                rows="3"
-              />
-            </div>
-
-            <div className="journal-field">
-              <div className="field-header">
-                <label>Goals for Tomorrow</label>
-                <button
-                  type="button"
-                  className={`voice-btn ${isListening && activeField === 'tomorrowGoals' ? 'listening' : ''}`}
-                  onClick={() => handleVoiceInput('tomorrowGoals')}
-                  title="Voice to text"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                    <line x1="12" y1="19" x2="12" y2="23"/>
-                    <line x1="8" y1="23" x2="16" y2="23"/>
-                  </svg>
-                </button>
-              </div>
-              <textarea
-                value={tomorrowGoals}
-                onChange={(e) => setTomorrowGoals(e.target.value)}
-                placeholder="What are your goals for tomorrow?"
-                rows="3"
+                value={journalEntry}
+                onChange={(e) => setJournalEntry(e.target.value)}
+                placeholder="Describe your accomplishments, challenges, learnings, and goals for tomorrow..."
+                rows="6"
               />
             </div>
           </div>
@@ -322,11 +231,18 @@ const JournalModal = ({ onClose }) => {
             <h4>Recent Entries</h4>
             {recentJournals.map(entry => (
               <div key={entry.id} className="journal-preview">
-                <span className="journal-date">{new Date(entry.date).toLocaleDateString()}</span>
+                <div className="journal-preview-header">
+                  <span className="journal-date">{new Date(entry.date).toLocaleDateString()}</span>
+                  {entry.mood && <span className="journal-mood">{entry.mood}</span>}
+                </div>
                 <p className="journal-snippet">
-                  {entry.accomplishments?.substring(0, 100)}...
+                  {entry.journalEntry?.substring(0, 100) || entry.accomplishments?.substring(0, 100)}...
                 </p>
-                {entry.mood && <span className="journal-mood">{entry.mood}</span>}
+                {entry.checklist && Object.keys(entry.checklist).length > 0 && (
+                  <div className="journal-skills">
+                    {Object.keys(entry.checklist).filter(k => entry.checklist[k]).join(', ')}
+                  </div>
+                )}
               </div>
             ))}
           </div>
