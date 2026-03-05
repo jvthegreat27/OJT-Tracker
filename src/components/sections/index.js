@@ -1,3 +1,4 @@
+export { default as HomeSection } from './HomeSection';
 export { default as ProgressSection } from './ProgressSection';
 export { default as SkillsSection } from './SkillsSection';
 export { default as BadgesSection } from './BadgesSection';

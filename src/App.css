@@ -638,6 +638,109 @@ body {
   font-size: 0.95rem;
 }
 
+/* Home Section Specific Styles */
+.home-section .stats-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.home-section .stat-card-large {
+  background: linear-gradient(135deg, var(--white) 0%, var(--gray-50) 100%);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.home-section .stat-icon-large {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.home-section .stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.home-section .stat-value-large {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.home-section .stat-label-large {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+.home-section .quick-actions-section {
+  margin-top: 1rem;
+}
+
+.home-section .quick-actions-section h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 1rem;
+}
+
+.home-section .quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.home-section .action-card {
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow-md);
+}
+
+.home-section .action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.home-section .action-icon-large {
+  font-size: 2rem;
+}
+
+.home-section .action-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--white);
+}
+
+.home-section .welcome-message {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.home-section .welcome-message h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #92400e;
+  margin-bottom: 0.5rem;
+}
+
+.home-section .welcome-message p {
+  font-size: 0.95rem;
+  color: #b45309;
+}
+
 /* Time Clock Section */
 .time-clock-section {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOJT } from '../context/OJTContext';
 import { 
+  HomeSection,
   ProgressSection, 
   SkillsSection, 
   BadgesSection, 
@@ -54,7 +55,7 @@ const Dashboard = () => {
   const [showBgUpload, setShowBgUpload] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [editingField, setEditingField] = useState(null);
-  const [activeSection, setActiveSection] = useState('progress'); // 'progress', 'skills', 'badges', 'journal', 'activity'
+  const [activeSection, setActiveSection] = useState('home'); // 'home', 'progress', 'skills', 'badges', 'journal', 'activity'
   const [editValue, setEditValue] = useState('');
   const customBg = getCustomBackground(currentIntern?.id);
   const profilePicture = getProfilePicture(currentIntern?.id);
@@ -187,6 +188,7 @@ const Dashboard = () => {
   }, [timeLogs, currentIntern, getEarnedBadges]);
 
   const sections = [
+    { id: 'home', label: 'Home', icon: '🏠' },
     { id: 'progress', label: 'Progress', icon: '📊' },
     { id: 'skills', label: 'Skills Heatmap', icon: '🔥' },
     { id: 'badges', label: 'Achievements', icon: '🏆' },
@@ -196,6 +198,18 @@ const Dashboard = () => {
   
   const renderActiveSection = () => {
     switch(activeSection) {
+      case 'home':
+        return (
+          <HomeSection 
+            totalHours={totalHours}
+            todayHours={todayHours}
+            completedDays={completedDays}
+            setShowJournal={setShowJournal}
+            setShowManualEntry={setShowManualEntry}
+            setShowMonthlyReport={setShowMonthlyReport}
+            setShowExcludedDates={setShowExcludedDates}
+          />
+        );
       case 'progress':
         return <ProgressSection />;
       case 'skills':
@@ -207,7 +221,15 @@ const Dashboard = () => {
       case 'activity':
         return <ActivitySection />;
       default:
-        return <ProgressSection />;
+        return <HomeSection 
+          totalHours={totalHours}
+          todayHours={todayHours}
+          completedDays={completedDays}
+          setShowJournal={setShowJournal}
+          setShowManualEntry={setShowManualEntry}
+          setShowMonthlyReport={setShowMonthlyReport}
+          setShowExcludedDates={setShowExcludedDates}
+        />;
     }
   };
 
@@ -539,26 +561,6 @@ const Dashboard = () => {
               <span className="stat-label">Days Completed</span>
             </div>
           </div>
-        </section>
-
-        {/* Quick Actions */}
-        <section className="quick-actions">
-          <button className="action-btn" onClick={() => setShowJournal(true)}>
-            <span className="action-icon">📝</span>
-            <span className="action-label">Daily Journal</span>
-          </button>
-          <button className="action-btn" onClick={() => setShowManualEntry(true)}>
-            <span className="action-icon">⏰</span>
-            <span className="action-label">Add Past Hours</span>
-          </button>
-          <button className="action-btn" onClick={() => setShowMonthlyReport(true)}>
-            <span className="action-icon">📊</span>
-            <span className="action-label">Monthly Report</span>
-          </button>
-          <button className="action-btn" onClick={() => setShowExcludedDates(true)}>
-            <span className="action-icon">📅</span>
-            <span className="action-label">Manage Dates</span>
-          </button>
         </section>
 
         {/* Active Section Content */}
