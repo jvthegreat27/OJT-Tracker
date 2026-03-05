@@ -69,11 +69,8 @@ const MonthlyReportModal = ({ onClose }) => {
       <div className={`modal modal-large ${report ? 'report-view' : ''}`} onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3>Monthly OJT Report Generator</h3>
-          <button className="btn-icon" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
+          <button className="btn-icon btn-close-x" onClick={onClose} title="Close">
+            <span className="close-x">×</span>
           </button>
         </div>
 

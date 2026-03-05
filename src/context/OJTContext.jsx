@@ -1185,6 +1185,128 @@ export const OJTProvider = ({ children }) => {
     return { success: true, logsCreated: 0, hoursAdded: 0, totalHours: hoursBefore, newBadges: [] };
   };
 
+  // Delete time logs for a specific date
+  const deleteTimeLogsForDate = async (date) => {
+    try {
+      const internId = currentIntern?.id;
+      if (!internId) return { success: false, error: 'No intern selected' };
+
+      const dateStr = new Date(date).toDateString();
+      const logsToRemove = timeLogs.filter(log => 
+        log.internId === internId && 
+        new Date(log.timeIn).toDateString() === dateStr
+      );
+
+      if (logsToRemove.length === 0) {
+        return { success: true, logsDeleted: 0, hoursDeducted: 0 };
+      }
+
+      // Calculate total hours to deduct
+      const totalHours = logsToRemove.reduce((sum, log) => sum + (log.durationHours || 0), 0);
+
+      // Delete from Firestore
+      for (const log of logsToRemove) {
+        await deleteDoc(doc(db, 'timeLogs', log.id));
+      }
+
+      // Remove from local state
+      setTimeLogs(prev => prev.filter(log => 
+        !(log.internId === internId && new Date(log.timeIn).toDateString() === dateStr)
+      ));
+
+      // Recalculate skills data
+      const remainingLogs = timeLogs.filter(log => 
+        log.internId === internId && 
+        new Date(log.timeIn).toDateString() !== dateStr
+      );
+
+      const newSkillsData = { ...skillsData };
+      const internSkills = { ...newSkillsData[internId] };
+      Object.keys(internSkills).forEach(skill => {
+        internSkills[skill] = 0;
+      });
+
+      remainingLogs.forEach(log => {
+        (log.skills || []).forEach(skill => {
+          if (internSkills[skill] !== undefined) {
+            internSkills[skill] += log.durationHours || 0;
+          }
+        });
+      });
+
+      newSkillsData[internId] = internSkills;
+      setSkillsData(newSkillsData);
+
+      // Save to Firestore
+      await setDoc(doc(db, 'userSettings', internId), {
+        skillsData: newSkillsData
+      }, { merge: true });
+
+      return { 
+        success: true, 
+        logsDeleted: logsToRemove.length, 
+        hoursDeducted: totalHours,
+        date: dateStr
+      };
+    } catch (error) {
+      console.error('Error deleting time logs:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Reset all excluded dates and time logs
+  const resetAllDatesAndLogs = async () => {
+    try {
+      const internId = currentIntern?.id;
+      if (!internId) return { success: false, error: 'No intern selected' };
+
+      // Get all excluded dates
+      const internExcludedDates = excludedDates[internId] || [];
+      
+      // Delete all excluded dates
+      const newExcludedDates = { ...excludedDates };
+      newExcludedDates[internId] = [];
+      setExcludedDates(newExcludedDates);
+
+      // Delete ALL time logs for this intern
+      const logsToDelete = timeLogs.filter(log => log.internId === internId);
+      const totalHours = logsToDelete.reduce((sum, log) => sum + (log.durationHours || 0), 0);
+
+      // Delete from Firestore
+      for (const log of logsToDelete) {
+        await deleteDoc(doc(db, 'timeLogs', log.id));
+      }
+
+      // Remove from local state
+      setTimeLogs(prev => prev.filter(log => log.internId !== internId));
+
+      // Reset skills data
+      const newSkillsData = { ...skillsData };
+      const internSkills = { ...newSkillsData[internId] };
+      Object.keys(internSkills).forEach(skill => {
+        internSkills[skill] = 0;
+      });
+      newSkillsData[internId] = internSkills;
+      setSkillsData(newSkillsData);
+
+      // Save to Firestore
+      await setDoc(doc(db, 'userSettings', internId), {
+        excludedDates: newExcludedDates,
+        skillsData: newSkillsData
+      }, { merge: true });
+
+      return { 
+        success: true, 
+        datesCleared: internExcludedDates.length,
+        logsDeleted: logsToDelete.length,
+        hoursDeducted: totalHours
+      };
+    } catch (error) {
+      console.error('Error resetting all dates and logs:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   const value = {
     interns,
     currentIntern,
@@ -1227,6 +1349,8 @@ export const OJTProvider = ({ children }) => {
     calculateWorkingDays,
     getCompletedDays,
     generatePastLogs,
+    deleteTimeLogsForDate,
+    resetAllDatesAndLogs,
     calculateGovernmentHours,
     getCustomBackground,
     setCustomBackground,
