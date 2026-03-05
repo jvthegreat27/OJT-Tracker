@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useOJT } from '../context/OJTContext';
+import { 
+  ProgressSection, 
+  SkillsSection, 
+  BadgesSection, 
+  JournalSection, 
+  ActivitySection 
+} from './sections';
 import JournalModal from './JournalModal';
-import JournalEntriesList from './JournalEntriesList';
-import SkillsHeatmap from './SkillsHeatmap';
-import BadgesDisplay from './BadgesDisplay';
 import MonthlyReportModal from './MonthlyReportModal';
 import ManualTimeEntry from './ManualTimeEntry';
 import ExcludedDatesModal from './ExcludedDatesModal';
@@ -50,23 +54,14 @@ const Dashboard = () => {
   const [showBgUpload, setShowBgUpload] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [editingField, setEditingField] = useState(null);
+  const [activeSection, setActiveSection] = useState('progress'); // 'progress', 'skills', 'badges', 'journal', 'activity'
   const [editValue, setEditValue] = useState('');
   const customBg = getCustomBackground(currentIntern?.id);
   const profilePicture = getProfilePicture(currentIntern?.id);
 
   // Scroll to section when selected
-  const scrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      const headerOffset = 80; // Account for sticky header
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-      
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-    }
+  const navigateToSection = (sectionId) => {
+    setActiveSection(sectionId);
     setSidebarOpen(false);
   };
 
@@ -192,12 +187,29 @@ const Dashboard = () => {
   }, [timeLogs, currentIntern, getEarnedBadges]);
 
   const sections = [
-    { id: 'overview', label: 'Overview', icon: '📊' },
+    { id: 'progress', label: 'Progress', icon: '📊' },
     { id: 'skills', label: 'Skills Heatmap', icon: '🔥' },
     { id: 'badges', label: 'Achievements', icon: '🏆' },
     { id: 'journal', label: 'Journal', icon: '📓' },
-    { id: 'activity', label: 'Recent Activity', icon: '📋' },
+    { id: 'activity', label: 'Activity', icon: '📋' },
   ];
+  
+  const renderActiveSection = () => {
+    switch(activeSection) {
+      case 'progress':
+        return <ProgressSection />;
+      case 'skills':
+        return <SkillsSection />;
+      case 'badges':
+        return <BadgesSection />;
+      case 'journal':
+        return <JournalSection />;
+      case 'activity':
+        return <ActivitySection />;
+      default:
+        return <ProgressSection />;
+    }
+  };
 
   return (
     <div className={`dashboard ${sidebarOpen ? 'sidebar-open' : ''}`}>
@@ -216,8 +228,8 @@ const Dashboard = () => {
           {sections.map(section => (
             <button
               key={section.id}
-              className="sidebar-nav-item"
-              onClick={() => scrollToSection(section.id)}
+              className={`sidebar-nav-item ${activeSection === section.id ? 'active' : ''}`}
+              onClick={() => navigateToSection(section.id)}
             >
               <span className="nav-icon">{section.icon}</span>
               <span className="nav-label">{section.label}</span>
@@ -549,182 +561,11 @@ const Dashboard = () => {
           </button>
         </section>
 
-        {/* Progress Section */}
-        <section id="overview" className="progress-section">
-          <div className="progress-card">
-            <div className="progress-header">
-              <div className="progress-title">
-                <h3>Progress to Goal</h3>
-                <span className="progress-subtitle">{completedDays} days completed</span>
-              </div>
-              <div className="progress-stats">
-                <span className="progress-hours">{totalHours.toFixed(1)}h</span>
-                <span className="progress-target">/ {currentIntern.targetHours}h</span>
-              </div>
-            </div>
-            
-            <div className="progress-bar-container">
-              <div 
-                className="progress-bar" 
-                style={{ width: `${progressPercentage}%` }}
-              >
-                <span className="progress-bar-glow"></span>
-              </div>
-            </div>
-            
-            <div className="progress-footer">
-              <div className="progress-percentage">
-                <span className="percentage-value">{progressPercentage}%</span>
-                <span className="percentage-label">Complete</span>
-              </div>
-              <div className="progress-remaining">
-                <span className="remaining-value">{(currentIntern.targetHours - totalHours).toFixed(1)}h</span>
-                <span className="remaining-label">Remaining</span>
-              </div>
-            </div>
-          </div>
+        {/* Active Section Content */}
+        <section className="active-section-container">
+          {renderActiveSection()}
         </section>
-
-        {/* Skills Heatmap */}
-        <div id="skills">
-          <SkillsHeatmap />
-        </div>
-
-        {/* Badges Display */}
-        <div id="badges">
-          <BadgesDisplay />
-        </div>
-
-        {/* Journal Section */}
-        <section id="journal" className="journal-section-dashboard">
-          <div className="section-header">
-            <h3>Daily Journal Entries</h3>
-            <button className="btn btn-primary" onClick={() => setShowJournal(true)}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Add Entry
-            </button>
-          </div>
-          <JournalEntriesList />
-        </section>
-
-        {/* Recent Activity */}
-        <section id="activity" className="activity-section">
-          <div className="activity-section-header">
-            <h3>{showAllActivity ? 'All Activity' : 'Recent Activity'}</h3>
-            {allLogs.length > 5 && (
-              <button 
-                className="btn btn-sm btn-secondary"
-                onClick={() => setShowAllActivity(!showAllActivity)}
-              >
-                {showAllActivity ? (
-                  <>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                    Show Recent (5)
-                  </>
-                ) : (
-                  <>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                      <polyline points="6 9 12 15 18 9"/>
-                      <polyline points="6 15 12 21 18 15"/>
-                    </svg>
-                    View All ({allLogs.length})
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-          {recentLogs.length === 0 ? (
-            <div className="empty-state">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="48" height="48">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-              </svg>
-              <p>No time logs yet. Start by clicking "Time In"!</p>
-            </div>
-          ) : (
-            <div className="activity-by-day">
-              {(() => {
-                // Group logs by date
-                const logsByDate = {};
-                recentLogs.forEach(log => {
-                  const date = new Date(log.timeIn).toDateString();
-                  if (!logsByDate[date]) logsByDate[date] = [];
-                  logsByDate[date].push(log);
-                });
-                
-                return Object.entries(logsByDate).map(([date, logs]) => {
-                  // Categorize by morning (before 12 PM) and afternoon (12 PM and after)
-                  const morningLogs = logs.filter(log => new Date(log.timeIn).getHours() < 12);
-                  const afternoonLogs = logs.filter(log => new Date(log.timeIn).getHours() >= 12);
-                  
-                  const morningTotal = morningLogs.reduce((sum, log) => sum + log.durationHours, 0);
-                  const afternoonTotal = afternoonLogs.reduce((sum, log) => sum + log.durationHours, 0);
-                  const dayTotal = morningTotal + afternoonTotal;
-                  
-                  return (
-                    <div key={date} className="day-activity-card">
-                      <div className="day-header">
-                        <span className="day-name">{formatDate(logs[0].timeIn)}</span>
-                        <span className="day-total">{dayTotal.toFixed(1)}h total</span>
-                      </div>
-                      
-                      <div className="sessions-grid">
-                        {/* Morning Session */}
-                        <div className={`session-block morning ${morningTotal > 0 ? 'has-data' : 'empty'}`}>
-                          <div className="session-header">
-                            <span className="session-icon">☀️</span>
-                            <span className="session-name">Morning</span>
-                            <span className="session-total">{morningTotal.toFixed(1)}h</span>
-                          </div>
-                          <div className="session-details">
-                            {morningLogs.length > 0 ? (
-                              morningLogs.map(log => (
-                                <div key={log.id} className="session-entry">
-                                  <span className="entry-time">{formatTime(log.timeIn)} - {formatTime(log.timeOut)}</span>
-                                  <span className="entry-hours">{log.durationHours.toFixed(1)}h</span>
-                                </div>
-                              ))
-                            ) : (
-                              <span className="no-session">No morning session</span>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {/* Afternoon Session */}
-                        <div className={`session-block afternoon ${afternoonTotal > 0 ? 'has-data' : 'empty'}`}>
-                          <div className="session-header">
-                            <span className="session-icon">🌅</span>
-                            <span className="session-name">Afternoon</span>
-                            <span className="session-total">{afternoonTotal.toFixed(1)}h</span>
-                          </div>
-                          <div className="session-details">
-                            {afternoonLogs.length > 0 ? (
-                              afternoonLogs.map(log => (
-                                <div key={log.id} className="session-entry">
-                                  <span className="entry-time">{formatTime(log.timeIn)} - {formatTime(log.timeOut)}</span>
-                                  <span className="entry-hours">{log.durationHours.toFixed(1)}h</span>
-                                </div>
-                              ))
-                            ) : (
-                              <span className="no-session">No afternoon session</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-          )}
-        </section>
-
-        </main>
+      </main>
 
       {/* Skill Selector Modal */}
       {showSkillSelector && (
