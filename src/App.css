@@ -436,6 +436,11 @@ body {
 
 .sidebar-toggle {
   margin-right: 0.75rem;
+  color: var(--gray-700);
+}
+
+.sidebar-toggle svg {
+  stroke: currentColor;
 }
 
 /* Floating Sidebar Toggle - Always Visible */
@@ -456,6 +461,10 @@ body {
   color: var(--gray-900);
   transition: all 0.2s;
   box-shadow: var(--shadow-md);
+}
+
+.sidebar-float-toggle svg {
+  stroke: currentColor;
 }
 
 .sidebar-float-toggle:hover {
