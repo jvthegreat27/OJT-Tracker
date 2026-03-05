@@ -162,6 +162,33 @@ export const OJTProvider = ({ children }) => {
     loadUserData();
   }, [currentIntern]);
 
+  // Verify and refresh current intern data on app load
+  useEffect(() => {
+    const verifyAndRefreshIntern = async () => {
+      const savedInternId = localStorage.getItem('ojt_current_intern_id');
+      if (!savedInternId) return;
+      
+      try {
+        const parsedIntern = JSON.parse(savedInternId);
+        // Fetch fresh intern data from Firestore
+        const internDoc = await getDoc(doc(db, 'interns', parsedIntern.id));
+        if (internDoc.exists()) {
+          const freshInternData = { id: internDoc.id, ...internDoc.data() };
+          setCurrentIntern(freshInternData);
+          setInterns([freshInternData]);
+        } else {
+          // Intern no longer exists in Firestore, clear local storage
+          localStorage.removeItem('ojt_current_intern_id');
+          setCurrentIntern(null);
+        }
+      } catch (error) {
+        console.error('Error verifying intern session:', error);
+      }
+    };
+    
+    verifyAndRefreshIntern();
+  }, []);
+
   // Custom background functions
   const getCustomBackground = (internId) => {
     return customBackgrounds[internId] || null;
