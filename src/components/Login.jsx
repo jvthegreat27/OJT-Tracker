@@ -25,7 +25,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     
@@ -34,9 +34,13 @@ const Login = () => {
       return;
     }
     
-    const result = loginIntern(username.trim(), password.trim());
-    if (!result.success) {
-      setError(result.error || 'Login failed. Please try again.');
+    try {
+      const result = await loginIntern(username.trim(), password.trim());
+      if (!result.success) {
+        setError(result.error || 'Login failed. Please try again.');
+      }
+    } catch (err) {
+      setError('Login failed. Please try again.');
     }
   };
 

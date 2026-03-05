@@ -32,18 +32,24 @@ const MonthlyReportModal = ({ onClose }) => {
     if (!reportRef.current) return;
     
     try {
-      // Configure html-to-image options
+      // A4 dimensions at 150 DPI for good quality
+      const a4Width = 1240; // 210mm at 150 DPI
+      const a4Height = 1754; // 297mm at 150 DPI
+      
+      // Configure html-to-image options for A4 size
       const dataUrl = await toPng(reportRef.current, {
         quality: 1.0,
         pixelRatio: 2,
         backgroundColor: '#ffffff',
-        width: reportRef.current.offsetWidth,
-        height: reportRef.current.offsetHeight,
+        width: a4Width,
+        height: a4Height,
         style: {
           transform: 'none',
           margin: '0',
-          padding: '20px',
-          boxSizing: 'border-box'
+          padding: '40px',
+          boxSizing: 'border-box',
+          width: `${a4Width}px`,
+          height: `${a4Height}px`
         }
       });
       

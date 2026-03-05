@@ -402,32 +402,9 @@ export const OJTProvider = ({ children }) => {
     const now = new Date();
     const timeIn = new Date(activeSession.timeIn);
     
-    // Calculate duration but cap at 8 hours (work end time is 5:00 PM, not 5:05 PM)
-    // The 5 minutes grace period is not counted
-    const workEndTime = new Date(now);
-    workEndTime.setHours(17, 0, 0, 0); // 5:00 PM
-    
-    let durationMs = workEndTime - timeIn;
-    
-    // Apply lunch break deduction (12:00 PM - 1:00 PM)
-    const currentDate = now.toISOString().split('T')[0];
-    const lunchStart = new Date(`${currentDate}T12:00:00`);
-    const lunchEnd = new Date(`${currentDate}T13:00:00`);
-    
-    // If work period overlaps with lunch, deduct lunch time
-    if (timeIn < lunchEnd && workEndTime > lunchStart) {
-      const overlapStart = timeIn > lunchStart ? timeIn : lunchStart;
-      const overlapEnd = workEndTime < lunchEnd ? workEndTime : lunchEnd;
-      if (overlapEnd > overlapStart) {
-        durationMs -= (overlapEnd - overlapStart);
-      }
-    }
-    
-    // Cap at 8 hours maximum
-    const maxDurationMs = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
-    durationMs = Math.min(durationMs, maxDurationMs);
-    
-    const durationHours = durationMs / (1000 * 60 * 60);
+    // Use consistent government hours calculation
+    const timeInStr = timeIn.toTimeString().slice(0, 5);
+    const durationHours = calculateGovernmentHours(timeInStr, '17:00');
     
     const completedSession = {
       ...activeSession,
@@ -464,21 +441,22 @@ export const OJTProvider = ({ children }) => {
     const now = new Date();
     const timeIn = new Date(activeSession.timeIn);
     
-    // Check if it's after 5:00 PM (grace period until 5:05 PM)
+    // Get time strings for government hours calculation
+    const timeInStr = timeIn.toTimeString().slice(0, 5);
     const currentDate = now.toISOString().split('T')[0];
     const workEndTime = new Date(`${currentDate}T17:00:00`);
     const gracePeriodEnd = new Date(`${currentDate}T17:05:00`);
     
     let actualTimeOut = now;
-    let workEndTimeForCalc = now;
+    let timeOutStr = now.toTimeString().slice(0, 5);
     
     // If user times out between 5:00 PM and 5:05 PM, cap work end at 5:00 PM
     if (now >= workEndTime && now <= gracePeriodEnd) {
-      workEndTimeForCalc = workEndTime;
+      timeOutStr = '17:00';
     }
     
-    const durationMs = workEndTimeForCalc - timeIn;
-    const durationHours = durationMs / (1000 * 60 * 60);
+    // Use government hours calculation for accurate duration
+    const durationHours = calculateGovernmentHours(timeInStr, timeOutStr);
 
     const completedSession = {
       ...activeSession,

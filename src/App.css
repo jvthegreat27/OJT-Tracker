@@ -457,6 +457,16 @@ body {
   stroke: currentColor;
 }
 
+.sidebar-toggle-blue {
+  color: var(--primary);
+  background: rgba(79, 70, 229, 0.1);
+}
+
+.sidebar-toggle-blue:hover {
+  background: rgba(79, 70, 229, 0.2);
+  color: var(--primary-dark);
+}
+
 /* Floating Sidebar Toggle - Always Visible */
 .sidebar-float-toggle {
   position: fixed;
