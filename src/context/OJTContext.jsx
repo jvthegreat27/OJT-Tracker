@@ -89,7 +89,10 @@ export const BADGES = [
 
 export const OJTProvider = ({ children }) => {
   const [interns, setInterns] = useState([]);
-  const [currentIntern, setCurrentIntern] = useState(null);
+  const [currentIntern, setCurrentIntern] = useState(() => {
+    const saved = localStorage.getItem('ojt_current_intern_id');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [timeLogs, setTimeLogs] = useState([]);
   const [activeSession, setActiveSession] = useState(null);
   const [journalEntries, setJournalEntries] = useState([]);
@@ -101,6 +104,15 @@ export const OJTProvider = ({ children }) => {
   const [customBackgrounds, setCustomBackgrounds] = useState({});
   const [profilePictures, setProfilePictures] = useState({});
   const [loading, setLoading] = useState(true);
+
+  // Save currentIntern to LocalStorage when it changes
+  useEffect(() => {
+    if (currentIntern) {
+      localStorage.setItem('ojt_current_intern_id', JSON.stringify(currentIntern));
+    } else {
+      localStorage.removeItem('ojt_current_intern_id');
+    }
+  }, [currentIntern]);
 
   // Load data from Firestore when currentIntern changes
   useEffect(() => {
