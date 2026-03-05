@@ -3297,6 +3297,28 @@ body {
   }
 }
 
+/* Mobile form input text color fix */
+@media (max-width: 768px) {
+  .form-control,
+  .login-form input,
+  .login-form select,
+  .login-form textarea {
+    color: var(--gray-900) !important;
+    -webkit-text-fill-color: var(--gray-900) !important;
+    background-color: var(--white) !important;
+  }
+  
+  .form-control::placeholder,
+  .login-form input::placeholder {
+    color: var(--gray-400) !important;
+    -webkit-text-fill-color: var(--gray-400) !important;
+  }
+  
+  .form-group label {
+    color: var(--gray-700) !important;
+  }
+}
+
 /* Touch-friendly improvements */
 @media (hover: none) {
   .btn:hover,
