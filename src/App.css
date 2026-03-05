@@ -446,7 +446,7 @@ body {
 /* Floating Sidebar Toggle - Always Visible */
 .sidebar-float-toggle {
   position: fixed;
-  top: 1rem;
+  top: calc(1rem + env(safe-area-inset-top));
   left: 1rem;
   z-index: 100;
   width: 44px;
@@ -3124,7 +3124,7 @@ body {
   }
   
   .sidebar-float-toggle {
-    top: 0.75rem;
+    top: calc(0.75rem + env(safe-area-inset-top));
     left: 0.75rem;
     width: 36px;
     height: 36px;

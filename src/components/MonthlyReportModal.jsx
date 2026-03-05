@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useOJT } from '../context/OJTContext';
+import { toPng } from 'html-to-image';
 
 const MonthlyReportModal = ({ onClose }) => {
   const { currentIntern, generateMonthlyReport } = useOJT();
@@ -31,52 +32,29 @@ const MonthlyReportModal = ({ onClose }) => {
     if (!reportRef.current) return;
     
     try {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const reportElement = reportRef.current;
+      // Configure html-to-image options
+      const dataUrl = await toPng(reportRef.current, {
+        quality: 1.0,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+        width: reportRef.current.offsetWidth,
+        height: reportRef.current.offsetHeight,
+        style: {
+          transform: 'none',
+          margin: '0',
+          padding: '20px',
+          boxSizing: 'border-box'
+        }
+      });
       
-      // A4 dimensions at 150 DPI for good quality
-      const a4Width = 1240; // 210mm at 150 DPI
-      const a4Height = 1754; // 297mm at 150 DPI
-      
-      canvas.width = a4Width;
-      canvas.height = a4Height;
-      
-      // White background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Use html2canvas approach with dom-to-image or similar
-      // For now, use a simpler approach with svg foreignObject
-      const svgData = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="${a4Width}" height="${a4Height}">
-          <foreignObject width="100%" height="100%">
-            <div xmlns="http://www.w3.org/1999/xhtml">
-              ${reportElement.outerHTML}
-            </div>
-          </foreignObject>
-        </svg>
-      `;
-      
-      const img = new Image();
-      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(svgBlob);
-      
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, a4Width, a4Height);
-        URL.revokeObjectURL(url);
-        
-        const pngUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.download = `OJT_Monthly_Report_${currentIntern?.name.replace(/\s+/g, '_')}_${monthStart}.png`;
-        link.href = pngUrl;
-        link.click();
-      };
-      
-      img.src = url;
+      // Create download link
+      const link = document.createElement('a');
+      link.download = `OJT_Monthly_Report_${currentIntern?.name.replace(/\s+/g, '_')}_${monthStart}.png`;
+      link.href = dataUrl;
+      link.click();
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Export failed. Please try using Print to PDF instead.');
+      alert('Export failed. Please try again or use Print to PDF instead.');
     }
   };
 
