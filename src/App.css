@@ -2388,8 +2388,15 @@ body {
   background: var(--white);
   padding: 1rem;
   border-radius: var(--radius);
-  max-width: 210mm; /* A4 width */
+  max-width: 100%;
   margin: 0 auto;
+  overflow-x: hidden;
+}
+
+@media (min-width: 769px) {
+  .report-output {
+    max-width: 210mm;
+  }
 }
 
 /* Monthly Report Form - Official Style - Optimized for Portrait Bond Paper */
@@ -2399,11 +2406,19 @@ body {
   padding: 1.5rem;
   font-family: 'Times New Roman', Times, serif;
   width: 100%;
-  max-width: 210mm; /* A4 width */
-  min-height: 297mm; /* A4 height */
+  max-width: 100%;
+  min-height: auto;
   box-sizing: border-box;
   margin: 0 auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* A4 size for desktop/print */
+@media (min-width: 769px) {
+  .monthly-report-form {
+    max-width: 210mm;
+    min-height: 297mm;
+  }
 }
 
 .report-form-header {
@@ -2450,10 +2465,16 @@ body {
 
 .report-form-grid {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: 1fr;
   gap: 0;
   border: 1px solid var(--gray-900);
   margin-bottom: 0;
+}
+
+@media (min-width: 769px) {
+  .report-form-grid {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
 }
 
 .form-field {
@@ -2595,10 +2616,17 @@ body {
 
 .report-form-signatures {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 1rem;
   margin-top: 1rem;
   padding-top: 0.75rem;
+}
+
+@media (min-width: 769px) {
+  .report-form-signatures {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
 }
 
 .signature-block {
